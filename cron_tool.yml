@@ -1,27 +1,22 @@
 ---
-- name: Administrar proceso en CentOS8
+- name: Configurar tareas cron en CentOS 8
   hosts: all
   become: yes
   tasks:
-    - name: Detener proceso si está en ejecución
-      command: "systemctl stop httpd"
-      ignore_errors: yes
-      async: 300
-      poll: 0
-      register: proceso_detenido
-      when: proceso_detenido.rc == 0
+    - name: Agregar tarea cron
+      cron:
+        name: "Tarea de ejemplo"
+        minute: "0"
+        hour: "3"
+        job: "/ruta/a/tu/script.sh"
 
-    - name: Iniciar proceso si no está en ejecución
-      command: "systemctl start httpd"
-      async: 300
-      poll: 0
-      register: proceso_iniciado
-      when: proceso_iniciado.rc == 0 or proceso_detenido.rc != 0
+    - name: Eliminar tarea cron anterior
+      cron:
+        name: "Tarea anterior"
+        state: absent
 
-    - name: Comprobar el estado del proceso
-      command: "systemctl is-active httpd"
-      register: estado_del_proceso
+    - name: Reiniciar el servicio cron
+      systemd:
+        name: crond
+        state: restarted
 
-    - name: Mostrar el estado del proceso
-      debug:
-        msg: "El estado del proceso es {{ estado_del_proceso.stdout }}"
